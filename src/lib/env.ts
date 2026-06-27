@@ -34,14 +34,13 @@ export const env = {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
+  // Names of any required vars that are not set. Empty => correctly configured.
+  missing,
 };
 
-// Fail fast: a misconfigured backend should crash on boot in production rather
-// than silently serving 500s. In development we warn so local work isn't blocked.
+// Surface misconfiguration loudly in logs. We do NOT throw here: in a serverless
+// environment throwing at import time produces an opaque FUNCTION_INVOCATION_FAILED
+// crash. Instead the app serves a clear 503 (see app.ts) so the problem is visible.
 if (missing.length > 0) {
-  const message = `Missing required environment variables: ${missing.join(', ')}`;
-  if (isProduction) {
-    throw new Error(`[env] ${message}`);
-  }
-  console.warn(`[env] ${message} (continuing in development)`);
+  console.error(`[env] Missing required environment variables: ${missing.join(', ')}`);
 }
