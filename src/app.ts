@@ -35,7 +35,28 @@ export function createApp() {
   );
 
   app.get('/', (_req, res) => res.json({ name: 'firstchoice-backend', status: 'ok' }));
-  app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
+  // Health/readiness — reports config status even when misconfigured.
+  app.get('/api/health', (_req, res) => {
+    res.json({
+      status: env.missing.length ? 'misconfigured' : 'ok',
+      ...(env.missing.length ? { missingEnv: env.missing } : {}),
+      time: new Date().toISOString(),
+    });
+  });
+
+  // If required env vars are missing, fail every API call with a clear 503
+  // instead of crashing the serverless function on import.
+  if (env.missing.length > 0) {
+    logger.error('backend misconfigured — missing required env', { missing: env.missing });
+    app.use('/api', (_req, res) => {
+      res.status(503).json({
+        error: 'Server is not configured. Set the required environment variables.',
+        missingEnv: env.missing,
+      });
+    });
+    return app;
+  }
 
   app.use('/api/public', publicLimiter, publicCache, publicRoutes);
   app.use('/api/admin', adminLimiter, adminRoutes);
