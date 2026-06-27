@@ -99,3 +99,8 @@ export const mediaSignSchema = z.object({
 export const mediaDestroySchema = z.object({
   public_id: z.string().min(1),
 });
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
