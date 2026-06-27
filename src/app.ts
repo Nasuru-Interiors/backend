@@ -6,6 +6,7 @@ import { env } from './lib/env';
 import { logger } from './lib/logger';
 import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
+import authRoutes from './routes/auth';
 import { errorHandler, notFound } from './middleware/error';
 import { requestLog, publicCache } from './middleware/requestLog';
 import { publicLimiter, adminLimiter } from './middleware/rateLimit';
@@ -59,6 +60,9 @@ export function createApp() {
   }
 
   app.use('/api/public', publicLimiter, publicCache, publicRoutes);
+  // Auth routes first so /login stays public; everything else under /api/admin
+  // is guarded by requireAdmin inside adminRoutes.
+  app.use('/api/admin/auth', adminLimiter, authRoutes);
   app.use('/api/admin', adminLimiter, adminRoutes);
 
   app.use(notFound);
