@@ -43,6 +43,7 @@ export const siteSettingsSchema = z.object({
   default_hero_color: hex,
   phone: z.string().max(40).optional(),
   whatsapp: z.string().max(40).optional(),
+  whatsapp_greeting: z.string().max(300).optional(),
   email: z.string().max(200).optional(),
   address: z.string().max(300).optional(),
   city: z.string().max(120).optional(),
