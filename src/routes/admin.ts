@@ -366,6 +366,18 @@ router.delete(
 // ---------------------------------------------------------------------
 // Categories
 // ---------------------------------------------------------------------
+router.get(
+  '/categories',
+  wrap(async (_req, res) => {
+    const { data, error } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    res.json(data ?? []);
+  }),
+);
+
 router.post(
   '/categories',
   wrap(async (req, res) => {
@@ -376,8 +388,30 @@ router.post(
       .insert({ ...body, slug })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     res.status(201).json(data);
+  }),
+);
+
+router.put(
+  '/categories/:id',
+  wrap(async (req, res) => {
+    const body = categorySchema.parse(req.body);
+    const slug = slugify(body.slug || body.name);
+    const { data, error } = await supabaseAdmin
+      .from('categories')
+      .update({ ...body, slug })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    res.json(data);
   }),
 );
 
