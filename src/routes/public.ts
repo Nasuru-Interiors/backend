@@ -74,6 +74,8 @@ router.get(
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
+    const empty = { items: [], page, limit, total: 0, totalPages: 0 };
+
     let query = supabaseAdmin
       .from('articles')
       .select(
@@ -84,6 +86,29 @@ router.get(
       .order('published_at', { ascending: false });
 
     if (req.query.featured === 'true') query = query.eq('featured', true);
+
+    // Filter by category slug (resolve slug -> id -> article ids).
+    if (req.query.category) {
+      const { data: cat } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('slug', String(req.query.category))
+        .single();
+      if (!cat) {
+        res.json(empty);
+        return;
+      }
+      const { data: links } = await supabaseAdmin
+        .from('article_categories')
+        .select('article_id')
+        .eq('category_id', cat.id);
+      const ids = (links ?? []).map((l) => l.article_id);
+      if (!ids.length) {
+        res.json(empty);
+        return;
+      }
+      query = query.in('id', ids);
+    }
 
     const { data, error, count } = await query.range(from, to);
     if (error) throw error;
