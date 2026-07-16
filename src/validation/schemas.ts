@@ -55,6 +55,7 @@ export const siteSettingsSchema = z.object({
   instagram_url: z.string().max(300).optional(),
   twitter_url: z.string().max(300).optional(),
   linkedin_url: z.string().max(300).optional(),
+  tiktok_url: z.string().max(300).optional(),
   default_meta_title: z.string().max(200).optional(),
   default_meta_description: z.string().max(320).optional(),
 });
