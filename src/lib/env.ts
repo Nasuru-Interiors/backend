@@ -22,9 +22,7 @@ function optional(name: string, fallback = ''): string {
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isProduction,
-  supabaseUrl: required('SUPABASE_URL'),
-  supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
-  supabaseAnonKey: optional('SUPABASE_ANON_KEY'),
+  databaseUrl: required('DATABASE_URL'),
   cloudinaryCloudName: required('CLOUDINARY_CLOUD_NAME'),
   cloudinaryApiKey: required('CLOUDINARY_API_KEY'),
   cloudinaryApiSecret: required('CLOUDINARY_API_SECRET'),

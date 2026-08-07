@@ -1,5 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
+import { sql } from '../lib/db';
 import { buildUploadSignature, destroyAsset } from '../lib/cloudinary';
 import { requireAdmin, AuthedRequest } from '../middleware/auth';
 import { slugify, estimateReadingMinutes } from '../lib/slug';
@@ -53,18 +53,24 @@ router.delete(
 router.get(
   '/stats',
   wrap(async (_req, res) => {
-    const [articles, published, carousel, categories] = await Promise.all([
-      supabaseAdmin.from('articles').select('id', { count: 'exact', head: true }),
-      supabaseAdmin.from('articles').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-      supabaseAdmin.from('carousel_images').select('id', { count: 'exact', head: true }),
-      supabaseAdmin.from('categories').select('id', { count: 'exact', head: true }),
+    const [articlesCount, publishedCount, carouselCount, categoriesCount] = await Promise.all([
+      sql`SELECT count(*)::int as count FROM public.articles`,
+      sql`SELECT count(*)::int as count FROM public.articles WHERE status = 'published'`,
+      sql`SELECT count(*)::int as count FROM public.carousel_images`,
+      sql`SELECT count(*)::int as count FROM public.categories`,
     ]);
+
+    const articles = articlesCount[0]?.count ?? 0;
+    const published = publishedCount[0]?.count ?? 0;
+    const carousel = carouselCount[0]?.count ?? 0;
+    const categories = categoriesCount[0]?.count ?? 0;
+
     res.json({
-      articles: articles.count ?? 0,
-      published: published.count ?? 0,
-      drafts: (articles.count ?? 0) - (published.count ?? 0),
-      carousel: carousel.count ?? 0,
-      categories: categories.count ?? 0,
+      articles,
+      published,
+      drafts: articles - published,
+      carousel,
+      categories,
     });
   }),
 );
@@ -75,37 +81,50 @@ router.get(
 router.get(
   '/articles',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .select('id, slug, title, status, featured, published_at, updated_at, cover_image_url')
-      .order('updated_at', { ascending: false });
-    if (error) throw error;
-    res.json(data ?? []);
+    const rows = await sql`
+      SELECT id, slug, title, status, featured, published_at, updated_at, cover_image_url
+      FROM public.articles
+      ORDER BY updated_at DESC
+    `;
+    res.json(rows ?? []);
   }),
 );
 
 router.get(
   '/articles/:id',
   wrap(async (req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .select('*, article_categories(category_id)')
-      .eq('id', req.params.id)
-      .single();
-    if (error || !data) {
+    const articleRows = await sql`
+      SELECT * FROM public.articles
+      WHERE id = ${req.params.id}
+      LIMIT 1
+    `;
+
+    if (!articleRows.length) {
       res.status(404).json({ error: 'Article not found' });
       return;
     }
-    res.json(data);
+
+    const catRows = await sql`
+      SELECT category_id FROM public.article_categories
+      WHERE article_id = ${req.params.id}
+    `;
+
+    res.json({
+      ...articleRows[0],
+      article_categories: catRows.map((c) => ({ category_id: String(c.category_id) })),
+    });
   }),
 );
 
 async function setArticleCategories(articleId: string, categoryIds: string[]) {
-  await supabaseAdmin.from('article_categories').delete().eq('article_id', articleId);
+  await sql`DELETE FROM public.article_categories WHERE article_id = ${articleId}`;
   if (categoryIds.length) {
-    await supabaseAdmin
-      .from('article_categories')
-      .insert(categoryIds.map((category_id) => ({ article_id: articleId, category_id })));
+    for (const catId of categoryIds) {
+      await sql`
+        INSERT INTO public.article_categories (article_id, category_id)
+        VALUES (${articleId}, ${catId})
+      `;
+    }
   }
 }
 
@@ -116,29 +135,25 @@ router.post(
     const slug = slugify(body.slug || body.title);
     const content = sanitizeRichText(body.content_html);
 
-    const row = {
-      title: body.title,
-      slug,
-      excerpt: body.excerpt,
-      content_html: content,
-      cover_image_url: body.cover_image_url ?? null,
-      cover_public_id: body.cover_public_id ?? null,
-      meta_title: body.meta_title,
-      meta_description: body.meta_description,
-      keywords: body.keywords,
-      status: body.status,
-      featured: body.featured,
-      author: body.author || 'First Choice Roofing Services',
-      reading_minutes: estimateReadingMinutes(content),
-      published_at: body.status === 'published' ? new Date().toISOString() : null,
-    };
+    const publishedAt = body.status === 'published' ? new Date().toISOString() : null;
+    const readingMinutes = estimateReadingMinutes(content);
 
-    const { data, error } = await supabaseAdmin.from('articles').insert(row).select().single();
-    if (error) {
-      res.status(400).json({ error: error.message });
-      return;
-    }
-    await setArticleCategories(data.id, body.category_ids);
+    const inserted = await sql`
+      INSERT INTO public.articles (
+        title, slug, excerpt, content_html, cover_image_url, cover_public_id,
+        meta_title, meta_description, keywords, status, featured, author,
+        reading_minutes, published_at
+      ) VALUES (
+        ${body.title}, ${slug}, ${body.excerpt}, ${content}, ${body.cover_image_url ?? null},
+        ${body.cover_public_id ?? null}, ${body.meta_title}, ${body.meta_description},
+        ${body.keywords}, ${body.status}, ${body.featured}, ${body.author || 'First Choice Roofing Services'},
+        ${readingMinutes}, ${publishedAt}
+      )
+      RETURNING *
+    `;
+
+    const data = inserted[0];
+    await setArticleCategories(String(data.id), body.category_ids);
     res.status(201).json(data);
   }),
 );
@@ -148,46 +163,51 @@ router.put(
   wrap(async (req, res) => {
     const body = articleSchema.parse(req.body);
 
-    const { data: existing } = await supabaseAdmin
-      .from('articles')
-      .select('status, published_at')
-      .eq('id', req.params.id)
-      .single();
+    const existingRows = await sql`
+      SELECT status, published_at FROM public.articles
+      WHERE id = ${req.params.id}
+      LIMIT 1
+    `;
+    const existing = existingRows[0];
 
     const slug = slugify(body.slug || body.title);
     const content = sanitizeRichText(body.content_html);
     const becomingPublished = body.status === 'published';
-    const published_at =
-      becomingPublished && !existing?.published_at ? new Date().toISOString() : existing?.published_at ?? null;
+    const publishedAt =
+      becomingPublished && !existing?.published_at
+        ? new Date().toISOString()
+        : becomingPublished
+        ? existing.published_at
+        : null;
 
-    const row = {
-      title: body.title,
-      slug,
-      excerpt: body.excerpt,
-      content_html: content,
-      cover_image_url: body.cover_image_url ?? null,
-      cover_public_id: body.cover_public_id ?? null,
-      meta_title: body.meta_title,
-      meta_description: body.meta_description,
-      keywords: body.keywords,
-      status: body.status,
-      featured: body.featured,
-      author: body.author || 'First Choice Roofing Services',
-      reading_minutes: estimateReadingMinutes(content),
-      published_at: becomingPublished ? published_at : null,
-    };
+    const updated = await sql`
+      UPDATE public.articles SET
+        title = ${body.title},
+        slug = ${slug},
+        excerpt = ${body.excerpt},
+        content_html = ${content},
+        cover_image_url = ${body.cover_image_url ?? null},
+        cover_public_id = ${body.cover_public_id ?? null},
+        meta_title = ${body.meta_title},
+        meta_description = ${body.meta_description},
+        keywords = ${body.keywords},
+        status = ${body.status},
+        featured = ${body.featured},
+        author = ${body.author || 'First Choice Roofing Services'},
+        reading_minutes = ${estimateReadingMinutes(content)},
+        published_at = ${publishedAt},
+        updated_at = NOW()
+      WHERE id = ${req.params.id}
+      RETURNING *
+    `;
 
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .update(row)
-      .eq('id', req.params.id)
-      .select()
-      .single();
-    if (error) {
-      res.status(400).json({ error: error.message });
+    if (!updated.length) {
+      res.status(404).json({ error: 'Article not found' });
       return;
     }
-    await setArticleCategories(data.id, body.category_ids);
+
+    const data = updated[0];
+    await setArticleCategories(String(data.id), body.category_ids);
     res.json(data);
   }),
 );
@@ -195,15 +215,17 @@ router.put(
 router.delete(
   '/articles/:id',
   wrap(async (req, res) => {
-    const { data: existing } = await supabaseAdmin
-      .from('articles')
-      .select('cover_public_id')
-      .eq('id', req.params.id)
-      .single();
-    if (existing?.cover_public_id) await destroyAsset(existing.cover_public_id);
+    const existingRows = await sql`
+      SELECT cover_public_id FROM public.articles
+      WHERE id = ${req.params.id}
+      LIMIT 1
+    `;
+    const existing = existingRows[0];
+    if (existing?.cover_public_id) {
+      await destroyAsset(String(existing.cover_public_id));
+    }
 
-    const { error } = await supabaseAdmin.from('articles').delete().eq('id', req.params.id);
-    if (error) throw error;
+    await sql`DELETE FROM public.articles WHERE id = ${req.params.id}`;
     res.json({ ok: true });
   }),
 );
@@ -214,9 +236,8 @@ router.delete(
 router.get(
   '/hero',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin.from('hero_settings').select('*').eq('id', 1).single();
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`SELECT * FROM public.hero_settings WHERE id = 1 LIMIT 1`;
+    res.json(rows[0] || {});
   }),
 );
 
@@ -224,14 +245,25 @@ router.put(
   '/hero',
   wrap(async (req, res) => {
     const body = heroSchema.parse(req.body);
-    const { data, error } = await supabaseAdmin
-      .from('hero_settings')
-      .update({ ...body, image_url: body.image_url ?? null, image_public_id: body.image_public_id ?? null })
-      .eq('id', 1)
-      .select()
-      .single();
-    if (error) throw error;
-    res.json(data);
+    const updated = await sql`
+      UPDATE public.hero_settings SET
+        heading = ${body.heading},
+        subheading = ${body.subheading},
+        cta_label = ${body.cta_label},
+        cta_href = ${body.cta_href},
+        secondary_cta_label = ${body.secondary_cta_label},
+        secondary_cta_href = ${body.secondary_cta_href},
+        background_type = ${body.background_type},
+        background_color = ${body.background_color},
+        text_color = ${body.text_color},
+        overlay_opacity = ${body.overlay_opacity},
+        image_url = ${body.image_url ?? null},
+        image_public_id = ${body.image_public_id ?? null},
+        updated_at = NOW()
+      WHERE id = 1
+      RETURNING *
+    `;
+    res.json(updated[0]);
   }),
 );
 
@@ -241,9 +273,8 @@ router.put(
 router.get(
   '/site-settings',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin.from('site_settings').select('*').eq('id', 1).single();
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`SELECT * FROM public.site_settings WHERE id = 1 LIMIT 1`;
+    res.json(rows[0] || {});
   }),
 );
 
@@ -251,14 +282,36 @@ router.put(
   '/site-settings',
   wrap(async (req, res) => {
     const body = siteSettingsSchema.parse(req.body);
-    const { data, error } = await supabaseAdmin
-      .from('site_settings')
-      .update(body)
-      .eq('id', 1)
-      .select()
-      .single();
-    if (error) throw error;
-    res.json(data);
+    const updated = await sql`
+      UPDATE public.site_settings SET
+        business_name = ${body.business_name},
+        tagline = ${body.tagline},
+        logo_url = ${body.logo_url ?? null},
+        logo_public_id = ${body.logo_public_id ?? null},
+        primary_color = ${body.primary_color},
+        secondary_color = ${body.secondary_color},
+        default_hero_color = ${body.default_hero_color},
+        phone = ${body.phone},
+        whatsapp = ${body.whatsapp},
+        email = ${body.email},
+        address = ${body.address},
+        city = ${body.city},
+        state = ${body.state},
+        country = ${body.country},
+        lat = ${body.lat ?? null},
+        lng = ${body.lng ?? null},
+        facebook_url = ${body.facebook_url},
+        instagram_url = ${body.instagram_url},
+        twitter_url = ${body.twitter_url},
+        linkedin_url = ${body.linkedin_url},
+        default_meta_title = ${body.default_meta_title},
+        default_meta_description = ${body.default_meta_description},
+        copyright_text = ${body.copyright_text ?? ''},
+        updated_at = NOW()
+      WHERE id = 1
+      RETURNING *
+    `;
+    res.json(updated[0]);
   }),
 );
 
@@ -268,9 +321,8 @@ router.put(
 router.get(
   '/about',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin.from('about_content').select('*').eq('id', 1).single();
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`SELECT * FROM public.about_content WHERE id = 1 LIMIT 1`;
+    res.json(rows[0] || {});
   }),
 );
 
@@ -278,19 +330,24 @@ router.put(
   '/about',
   wrap(async (req, res) => {
     const body = aboutSchema.parse(req.body);
-    const { data, error } = await supabaseAdmin
-      .from('about_content')
-      .update({
-        ...body,
-        body_html: sanitizeRichText(body.body_html),
-        image_url: body.image_url ?? null,
-        image_public_id: body.image_public_id ?? null,
-      })
-      .eq('id', 1)
-      .select()
-      .single();
-    if (error) throw error;
-    res.json(data);
+    const bodyHtml = sanitizeRichText(body.body_html);
+    const statsJson = JSON.stringify(body.stats);
+    const teamJson = JSON.stringify(body.team);
+
+    const updated = await sql`
+      UPDATE public.about_content SET
+        headline = ${body.headline},
+        subheading = ${body.subheading},
+        body_html = ${bodyHtml},
+        image_url = ${body.image_url ?? null},
+        image_public_id = ${body.image_public_id ?? null},
+        stats = ${statsJson}::jsonb,
+        team = ${teamJson}::jsonb,
+        updated_at = NOW()
+      WHERE id = 1
+      RETURNING *
+    `;
+    res.json(updated[0]);
   }),
 );
 
@@ -300,12 +357,11 @@ router.put(
 router.get(
   '/carousel',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('carousel_images')
-      .select('*')
-      .order('sort_order', { ascending: true });
-    if (error) throw error;
-    res.json(data ?? []);
+    const rows = await sql`
+      SELECT * FROM public.carousel_images
+      ORDER BY sort_order ASC
+    `;
+    res.json(rows ?? []);
   }),
 );
 
@@ -313,9 +369,16 @@ router.post(
   '/carousel',
   wrap(async (req, res) => {
     const body = carouselSchema.parse(req.body);
-    const { data, error } = await supabaseAdmin.from('carousel_images').insert(body).select().single();
-    if (error) throw error;
-    res.status(201).json(data);
+    const inserted = await sql`
+      INSERT INTO public.carousel_images (
+        image_url, public_id, alt, caption, sort_order, active
+      ) VALUES (
+        ${body.image_url}, ${body.public_id ?? null}, ${body.alt},
+        ${body.caption}, ${body.sort_order}, ${body.active}
+      )
+      RETURNING *
+    `;
+    res.status(201).json(inserted[0]);
   }),
 );
 
@@ -323,14 +386,25 @@ router.put(
   '/carousel/:id',
   wrap(async (req, res) => {
     const body = carouselUpdateSchema.parse(req.body);
-    const { data, error } = await supabaseAdmin
-      .from('carousel_images')
-      .update(body)
-      .eq('id', req.params.id)
-      .select()
-      .single();
-    if (error) throw error;
-    res.json(data);
+
+    // Build conditional updates
+    const existingRows = await sql`SELECT * FROM public.carousel_images WHERE id = ${req.params.id} LIMIT 1`;
+    if (!existingRows.length) {
+      res.status(404).json({ error: 'Carousel image not found' });
+      return;
+    }
+    const cur = existingRows[0];
+
+    const updated = await sql`
+      UPDATE public.carousel_images SET
+        alt = ${body.alt !== undefined ? body.alt : cur.alt},
+        caption = ${body.caption !== undefined ? body.caption : cur.caption},
+        active = ${body.active !== undefined ? body.active : cur.active},
+        sort_order = ${body.sort_order !== undefined ? body.sort_order : cur.sort_order}
+      WHERE id = ${req.params.id}
+      RETURNING *
+    `;
+    res.json(updated[0]);
   }),
 );
 
@@ -338,11 +412,13 @@ router.put(
   '/carousel-reorder',
   wrap(async (req, res) => {
     const { ids } = reorderSchema.parse(req.body);
-    await Promise.all(
-      ids.map((id, index) =>
-        supabaseAdmin.from('carousel_images').update({ sort_order: index }).eq('id', id),
-      ),
-    );
+    for (let index = 0; index < ids.length; index++) {
+      await sql`
+        UPDATE public.carousel_images
+        SET sort_order = ${index}
+        WHERE id = ${ids[index]}
+      `;
+    }
     res.json({ ok: true });
   }),
 );
@@ -350,15 +426,17 @@ router.put(
 router.delete(
   '/carousel/:id',
   wrap(async (req, res) => {
-    const { data: existing } = await supabaseAdmin
-      .from('carousel_images')
-      .select('public_id')
-      .eq('id', req.params.id)
-      .single();
-    if (existing?.public_id) await destroyAsset(existing.public_id);
+    const existingRows = await sql`
+      SELECT public_id FROM public.carousel_images
+      WHERE id = ${req.params.id}
+      LIMIT 1
+    `;
+    const existing = existingRows[0];
+    if (existing?.public_id) {
+      await destroyAsset(String(existing.public_id));
+    }
 
-    const { error } = await supabaseAdmin.from('carousel_images').delete().eq('id', req.params.id);
-    if (error) throw error;
+    await sql`DELETE FROM public.carousel_images WHERE id = ${req.params.id}`;
     res.json({ ok: true });
   }),
 );
@@ -369,12 +447,11 @@ router.delete(
 router.get(
   '/categories',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
-    if (error) throw error;
-    res.json(data ?? []);
+    const rows = await sql`
+      SELECT * FROM public.categories
+      ORDER BY name ASC
+    `;
+    res.json(rows ?? []);
   }),
 );
 
@@ -383,16 +460,12 @@ router.post(
   wrap(async (req, res) => {
     const body = categorySchema.parse(req.body);
     const slug = slugify(body.slug || body.name);
-    const { data, error } = await supabaseAdmin
-      .from('categories')
-      .insert({ ...body, slug })
-      .select()
-      .single();
-    if (error) {
-      res.status(400).json({ error: error.message });
-      return;
-    }
-    res.status(201).json(data);
+    const inserted = await sql`
+      INSERT INTO public.categories (name, slug, description)
+      VALUES (${body.name}, ${slug}, ${body.description})
+      RETURNING *
+    `;
+    res.status(201).json(inserted[0]);
   }),
 );
 
@@ -401,25 +474,26 @@ router.put(
   wrap(async (req, res) => {
     const body = categorySchema.parse(req.body);
     const slug = slugify(body.slug || body.name);
-    const { data, error } = await supabaseAdmin
-      .from('categories')
-      .update({ ...body, slug })
-      .eq('id', req.params.id)
-      .select()
-      .single();
-    if (error) {
-      res.status(400).json({ error: error.message });
+    const updated = await sql`
+      UPDATE public.categories SET
+        name = ${body.name},
+        slug = ${slug},
+        description = ${body.description}
+      WHERE id = ${req.params.id}
+      RETURNING *
+    `;
+    if (!updated.length) {
+      res.status(404).json({ error: 'Category not found' });
       return;
     }
-    res.json(data);
+    res.json(updated[0]);
   }),
 );
 
 router.delete(
   '/categories/:id',
   wrap(async (req, res) => {
-    const { error } = await supabaseAdmin.from('categories').delete().eq('id', req.params.id);
-    if (error) throw error;
+    await sql`DELETE FROM public.categories WHERE id = ${req.params.id}`;
     res.json({ ok: true });
   }),
 );

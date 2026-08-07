@@ -22,7 +22,7 @@ const loginLimiter = rateLimit({
 });
 
 // POST /api/admin/auth/login — public. Verifies credentials server-side against
-// Supabase and returns a backend-signed JWT (the admin never talks to Supabase).
+// Neon Database and returns a backend-signed JWT (the admin never talks to the DB directly).
 router.post(
   '/login',
   loginLimiter,

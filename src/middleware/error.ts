@@ -36,7 +36,7 @@ export function errorHandler(
   res.status(500).json({ error: 'Internal server error' });
 }
 
-/** Extracts a readable message from Errors, Supabase/Postgrest objects, or anything. */
+/** Extracts a readable message from Errors, Database/Postgres objects, or anything. */
 function describeError(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (err && typeof err === 'object') {

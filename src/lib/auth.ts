@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 import { env } from './env';
-import { supabaseAdmin } from './supabase';
+import { sql } from './db';
 
 export interface AdminTokenPayload {
   sub: string; // user id
@@ -10,33 +10,34 @@ export interface AdminTokenPayload {
 }
 
 /**
- * Verifies email/password against Supabase Auth — entirely server-side. A fresh
- * anon client is used per call so no session state leaks between requests. The
- * admin frontend never touches Supabase; it only ever talks to this backend.
+ * Verifies email/password against Neon Database — entirely server-side.
+ * The admin frontend never touches the database directly; it only ever talks to this backend.
  */
 export async function verifyCredentials(
   email: string,
   password: string,
 ): Promise<{ id: string; email: string } | null> {
-  if (!env.supabaseAnonKey) return null;
+  if (!env.databaseUrl) return null;
 
-  const client = createClient(env.supabaseUrl, env.supabaseAnonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  try {
+    const rows = await sql`
+      SELECT id, email, password_hash, role
+      FROM public.profiles
+      WHERE lower(email) = lower(${email})
+      LIMIT 1
+    `;
 
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error || !data.user) return null;
+    const user = rows[0];
+    if (!user || user.role !== 'admin' || !user.password_hash) return null;
 
-  // Confirm the authenticated user is a registered admin (service-role read).
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', data.user.id)
-    .single();
+    const valid = await bcrypt.compare(password, String(user.password_hash));
+    if (!valid) return null;
 
-  if (!profile || profile.role !== 'admin') return null;
-
-  return { id: data.user.id, email: data.user.email ?? email };
+    return { id: String(user.id), email: String(user.email) };
+  } catch (error) {
+    console.error('[auth] Credential verification error:', error);
+    return null;
+  }
 }
 
 export function issueToken(user: { id: string; email: string }): string {

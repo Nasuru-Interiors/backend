@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
+import { sql } from '../lib/db';
 
 const router = Router();
 
@@ -12,9 +12,8 @@ const wrap =
 router.get(
   '/site-settings',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin.from('site_settings').select('*').eq('id', 1).single();
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`SELECT * FROM public.site_settings WHERE id = 1`;
+    res.json(rows[0] || {});
   }),
 );
 
@@ -22,9 +21,8 @@ router.get(
 router.get(
   '/hero',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin.from('hero_settings').select('*').eq('id', 1).single();
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`SELECT * FROM public.hero_settings WHERE id = 1`;
+    res.json(rows[0] || {});
   }),
 );
 
@@ -32,9 +30,8 @@ router.get(
 router.get(
   '/about',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin.from('about_content').select('*').eq('id', 1).single();
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`SELECT * FROM public.about_content WHERE id = 1`;
+    res.json(rows[0] || {});
   }),
 );
 
@@ -42,13 +39,12 @@ router.get(
 router.get(
   '/carousel',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('carousel_images')
-      .select('*')
-      .eq('active', true)
-      .order('sort_order', { ascending: true });
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`
+      SELECT * FROM public.carousel_images
+      WHERE active = true
+      ORDER BY sort_order ASC
+    `;
+    res.json(rows);
   }),
 );
 
@@ -56,12 +52,11 @@ router.get(
 router.get(
   '/categories',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
-    if (error) throw error;
-    res.json(data);
+    const rows = await sql`
+      SELECT * FROM public.categories
+      ORDER BY name ASC
+    `;
+    res.json(rows);
   }),
 );
 
@@ -71,54 +66,92 @@ router.get(
   wrap(async (req, res) => {
     const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
     const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '9'), 10)));
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    const offset = (page - 1) * limit;
 
     const empty = { items: [], page, limit, total: 0, totalPages: 0 };
+    const featuredOnly = req.query.featured === 'true';
 
-    let query = supabaseAdmin
-      .from('articles')
-      .select(
-        'id, slug, title, excerpt, cover_image_url, author, reading_minutes, published_at, featured, keywords',
-        { count: 'exact' },
-      )
-      .eq('status', 'published')
-      .order('published_at', { ascending: false });
+    let categoryArticleIds: string[] | null = null;
 
-    if (req.query.featured === 'true') query = query.eq('featured', true);
-
-    // Filter by category slug (resolve slug -> id -> article ids).
     if (req.query.category) {
-      const { data: cat } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('slug', String(req.query.category))
-        .single();
-      if (!cat) {
+      const catRows = await sql`
+        SELECT id FROM public.categories WHERE slug = ${String(req.query.category)} LIMIT 1
+      `;
+      if (!catRows.length) {
         res.json(empty);
         return;
       }
-      const { data: links } = await supabaseAdmin
-        .from('article_categories')
-        .select('article_id')
-        .eq('category_id', cat.id);
-      const ids = (links ?? []).map((l) => l.article_id);
-      if (!ids.length) {
+      const linkRows = await sql`
+        SELECT article_id FROM public.article_categories WHERE category_id = ${catRows[0].id}
+      `;
+      categoryArticleIds = linkRows.map((r) => String(r.article_id));
+      if (!categoryArticleIds.length) {
         res.json(empty);
         return;
       }
-      query = query.in('id', ids);
     }
 
-    const { data, error, count } = await query.range(from, to);
-    if (error) throw error;
+    let countRows;
+    let itemRows;
+
+    if (categoryArticleIds !== null && featuredOnly) {
+      countRows = await sql`
+        SELECT count(*)::int as count FROM public.articles
+        WHERE status = 'published' AND featured = true AND id = ANY(${categoryArticleIds})
+      `;
+      itemRows = await sql`
+        SELECT id, slug, title, excerpt, cover_image_url, author, reading_minutes, published_at, featured, keywords
+        FROM public.articles
+        WHERE status = 'published' AND featured = true AND id = ANY(${categoryArticleIds})
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    } else if (categoryArticleIds !== null) {
+      countRows = await sql`
+        SELECT count(*)::int as count FROM public.articles
+        WHERE status = 'published' AND id = ANY(${categoryArticleIds})
+      `;
+      itemRows = await sql`
+        SELECT id, slug, title, excerpt, cover_image_url, author, reading_minutes, published_at, featured, keywords
+        FROM public.articles
+        WHERE status = 'published' AND id = ANY(${categoryArticleIds})
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    } else if (featuredOnly) {
+      countRows = await sql`
+        SELECT count(*)::int as count FROM public.articles
+        WHERE status = 'published' AND featured = true
+      `;
+      itemRows = await sql`
+        SELECT id, slug, title, excerpt, cover_image_url, author, reading_minutes, published_at, featured, keywords
+        FROM public.articles
+        WHERE status = 'published' AND featured = true
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    } else {
+      countRows = await sql`
+        SELECT count(*)::int as count FROM public.articles
+        WHERE status = 'published'
+      `;
+      itemRows = await sql`
+        SELECT id, slug, title, excerpt, cover_image_url, author, reading_minutes, published_at, featured, keywords
+        FROM public.articles
+        WHERE status = 'published'
+        ORDER BY published_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+    }
+
+    const total = countRows[0]?.count ?? 0;
 
     res.json({
-      items: data ?? [],
+      items: itemRows ?? [],
       page,
       limit,
-      total: count ?? 0,
-      totalPages: count ? Math.ceil(count / limit) : 0,
+      total,
+      totalPages: total ? Math.ceil(total / limit) : 0,
     });
   }),
 );
@@ -127,18 +160,17 @@ router.get(
 router.get(
   '/articles/:slug',
   wrap(async (req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .select('*')
-      .eq('slug', req.params.slug)
-      .eq('status', 'published')
-      .single();
+    const rows = await sql`
+      SELECT * FROM public.articles
+      WHERE slug = ${req.params.slug} AND status = 'published'
+      LIMIT 1
+    `;
 
-    if (error || !data) {
+    if (!rows.length) {
       res.status(404).json({ error: 'Article not found' });
       return;
     }
-    res.json(data);
+    res.json(rows[0]);
   }),
 );
 
@@ -146,15 +178,14 @@ router.get(
 router.get(
   '/articles/:slug/related',
   wrap(async (req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .select('id, slug, title, excerpt, cover_image_url, published_at, reading_minutes')
-      .eq('status', 'published')
-      .neq('slug', req.params.slug)
-      .order('published_at', { ascending: false })
-      .limit(3);
-    if (error) throw error;
-    res.json(data ?? []);
+    const rows = await sql`
+      SELECT id, slug, title, excerpt, cover_image_url, published_at, reading_minutes
+      FROM public.articles
+      WHERE status = 'published' AND slug != ${req.params.slug}
+      ORDER BY published_at DESC
+      LIMIT 3
+    `;
+    res.json(rows ?? []);
   }),
 );
 
@@ -162,13 +193,13 @@ router.get(
 router.get(
   '/sitemap-articles',
   wrap(async (_req, res) => {
-    const { data, error } = await supabaseAdmin
-      .from('articles')
-      .select('slug, updated_at, published_at')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false });
-    if (error) throw error;
-    res.json(data ?? []);
+    const rows = await sql`
+      SELECT slug, updated_at, published_at
+      FROM public.articles
+      WHERE status = 'published'
+      ORDER BY published_at DESC
+    `;
+    res.json(rows ?? []);
   }),
 );
 
