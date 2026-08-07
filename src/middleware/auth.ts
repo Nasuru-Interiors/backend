@@ -9,7 +9,7 @@ export interface AuthedRequest extends Request {
 /**
  * Verifies the backend-issued admin JWT (Bearer). All admin write/data routes
  * sit behind this. The token is signed by this backend on login, so no call to
- * Supabase is needed here — DB access stays entirely server-side.
+ * DB database access stays entirely server-side.
  */
 export function requireAdmin(req: AuthedRequest, res: Response, next: NextFunction): void {
   const header = req.headers.authorization || '';

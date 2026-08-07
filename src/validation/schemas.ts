@@ -58,6 +58,7 @@ export const siteSettingsSchema = z.object({
   tiktok_url: z.string().max(300).optional(),
   default_meta_title: z.string().max(200).optional(),
   default_meta_description: z.string().max(320).optional(),
+  copyright_text: z.string().max(300).optional().default(''),
 });
 
 export const carouselSchema = z.object({

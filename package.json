@@ -2,7 +2,7 @@
   "name": "firstchoice-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "First Choice Roofing Services — API (Express + Supabase + Cloudinary)",
+  "description": "First Choice Roofing Services — API (Express + Neon Database + Cloudinary)",
   "main": "dist/src/server.js",
   "engines": {
     "node": ">=18.18"
@@ -12,10 +12,14 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.ts\" \"api/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\" \"api/**/*.ts\"",
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "migrate:supabase": "tsx src/scripts/migrate-from-supabase.ts",
+    "seed:admin": "tsx src/scripts/seed-admin.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
+    "@neondatabase/serverless": "^0.10.4",
+    "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
@@ -28,6 +32,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
