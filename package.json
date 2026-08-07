@@ -15,7 +15,8 @@
     "lint": "eslint \"src/**/*.ts\" \"api/**/*.ts\"",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "migrate:supabase": "tsx src/scripts/migrate-from-supabase.ts",
-    "seed:admin": "tsx src/scripts/seed-admin.ts"
+    "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "seed:about": "tsx src/scripts/seed-about.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
