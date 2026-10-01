@@ -16,7 +16,8 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "migrate:supabase": "tsx src/scripts/migrate-from-supabase.ts",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
-    "seed:about": "tsx src/scripts/seed-about.ts"
+    "seed:about": "tsx src/scripts/seed-about.ts",
+    "seed:articles": "tsx src/scripts/seed-articles.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
