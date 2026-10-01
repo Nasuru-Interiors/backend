@@ -26,7 +26,7 @@ export const env = {
   cloudinaryCloudName: required('CLOUDINARY_CLOUD_NAME'),
   cloudinaryApiKey: required('CLOUDINARY_API_KEY'),
   cloudinaryApiSecret: required('CLOUDINARY_API_SECRET'),
-  cloudinaryFolder: optional('CLOUDINARY_UPLOAD_FOLDER', 'firstchoice'),
+  cloudinaryFolder: optional('CLOUDINARY_UPLOAD_FOLDER', 'nasuru-interios'),
   adminJwtSecret: required('ADMIN_JWT_SECRET'),
   port: parseInt(process.env.PORT || '4000', 10),
   allowedOrigins: optional('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001')

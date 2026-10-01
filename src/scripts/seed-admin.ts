@@ -3,7 +3,7 @@ import { sql } from '../lib/db';
 
 async function main() {
   const args = process.argv.slice(2);
-  const email = args[0] || 'admin@firstchoiceroofingservice.com';
+  const email = args[0] || 'admin@nasuru.com';
   const password = args[1] || 'VerySecurePassword123!)(*';
 
   console.log(`Seeding admin user in Neon Database...`);
