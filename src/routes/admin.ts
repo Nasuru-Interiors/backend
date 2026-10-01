@@ -146,7 +146,7 @@ router.post(
       ) VALUES (
         ${body.title}, ${slug}, ${body.excerpt}, ${content}, ${body.cover_image_url ?? null},
         ${body.cover_public_id ?? null}, ${body.meta_title}, ${body.meta_description},
-        ${body.keywords}, ${body.status}, ${body.featured}, ${body.author || 'First Choice Roofing Services'},
+        ${body.keywords}, ${body.status}, ${body.featured}, ${body.author || 'Nasuru Interios'},
         ${readingMinutes}, ${publishedAt}
       )
       RETURNING *
@@ -193,7 +193,7 @@ router.put(
         keywords = ${body.keywords},
         status = ${body.status},
         featured = ${body.featured},
-        author = ${body.author || 'First Choice Roofing Services'},
+        author = ${body.author || 'Nasuru Interios'},
         reading_minutes = ${estimateReadingMinutes(content)},
         published_at = ${publishedAt},
         updated_at = NOW()
@@ -237,7 +237,8 @@ router.get(
   '/hero',
   wrap(async (_req, res) => {
     const rows = await sql`SELECT * FROM public.hero_settings WHERE id = 1 LIMIT 1`;
-    res.json(rows[0] || {});
+    const hero = rows[0] ? { ...rows[0], overlay_opacity: Number(rows[0].overlay_opacity) } : {};
+    res.json(hero);
   }),
 );
 
@@ -263,7 +264,8 @@ router.put(
       WHERE id = 1
       RETURNING *
     `;
-    res.json(updated[0]);
+    const hero = updated[0] ? { ...updated[0], overlay_opacity: Number(updated[0].overlay_opacity) } : {};
+    res.json(hero);
   }),
 );
 

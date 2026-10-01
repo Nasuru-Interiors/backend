@@ -1,8 +1,8 @@
 {
-  "name": "firstchoice-backend",
+  "name": "nasuru-interios-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "First Choice Roofing Services — API (Express + Neon Database + Cloudinary)",
+  "description": "Nasuru Interios — API (Express + Neon Database + Cloudinary)",
   "main": "dist/src/server.js",
   "engines": {
     "node": ">=18.18"

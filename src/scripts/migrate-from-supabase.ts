@@ -36,13 +36,13 @@ async function main() {
       const r = siteSettings[0];
       await sql`
         UPDATE public.site_settings SET
-          business_name = ${r.business_name ?? 'First Choice Roofing Services'},
+          business_name = ${r.business_name ?? 'Nasuru Interios'},
           tagline = ${r.tagline ?? ''},
           logo_url = ${r.logo_url ?? null},
           logo_public_id = ${r.logo_public_id ?? null},
-          primary_color = ${r.primary_color ?? '#E10600'},
+          primary_color = ${r.primary_color ?? '#2F5D8C'},
           secondary_color = ${r.secondary_color ?? '#FFFFFF'},
-          default_hero_color = ${r.default_hero_color ?? '#E10600'},
+          default_hero_color = ${r.default_hero_color ?? '#2F5D8C'},
           phone = ${r.phone ?? ''},
           whatsapp = ${r.whatsapp ?? ''},
           email = ${r.email ?? ''},
@@ -80,7 +80,7 @@ async function main() {
           secondary_cta_label = ${r.secondary_cta_label ?? ''},
           secondary_cta_href = ${r.secondary_cta_href ?? ''},
           background_type = ${r.background_type ?? 'color'},
-          background_color = ${r.background_color ?? '#E10600'},
+          background_color = ${r.background_color ?? '#2F5D8C'},
           text_color = ${r.text_color ?? '#FFFFFF'},
           overlay_opacity = ${r.overlay_opacity ?? 0.45},
           image_url = ${r.image_url ?? null},
@@ -146,7 +146,7 @@ async function main() {
           ${r.id}, ${r.slug}, ${r.title}, ${r.excerpt ?? ''}, ${r.content_html ?? ''},
           ${r.cover_image_url ?? null}, ${r.cover_public_id ?? null}, ${r.meta_title ?? ''},
           ${r.meta_description ?? ''}, ${r.keywords ?? []}, ${r.status ?? 'draft'},
-          ${r.featured ?? false}, ${r.author ?? 'First Choice Roofing Services'},
+          ${r.featured ?? false}, ${r.author ?? 'Nasuru Interios'},
           ${r.reading_minutes ?? 3}, ${r.published_at ?? null},
           ${r.created_at ?? new Date().toISOString()}, ${r.updated_at ?? new Date().toISOString()}
         )

@@ -35,7 +35,7 @@ export function createApp() {
     }),
   );
 
-  app.get('/', (_req, res) => res.json({ name: 'firstchoice-backend', status: 'ok' }));
+  app.get('/', (_req, res) => res.json({ name: 'nasuru-interios-backend', status: 'ok' }));
 
   // Health/readiness — reports config status even when misconfigured.
   app.get('/api/health', (_req, res) => {

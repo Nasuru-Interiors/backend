@@ -7,12 +7,13 @@ function splitSqlStatements(sqlText: string): string[] {
   let current = '';
   let inDollarQuote = false;
   let dollarTag = '';
+  let inSingleQuote = false;
 
   const lines = sqlText.split('\n');
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!inDollarQuote && trimmed.startsWith('--')) {
+    if (!inDollarQuote && !inSingleQuote && trimmed.startsWith('--')) {
       continue;
     }
 
@@ -20,7 +21,12 @@ function splitSqlStatements(sqlText: string): string[] {
     while (idx < line.length) {
       const char = line[idx];
 
-      if (char === '$') {
+      if (char === "'" && !inDollarQuote) {
+        // Toggles on each quote; an escaped '' toggles twice, leaving the state unchanged.
+        inSingleQuote = !inSingleQuote;
+      }
+
+      if (char === '$' && !inSingleQuote) {
         const match = line.slice(idx).match(/^\$[a-zA-Z0-9_]*\$/);
         if (match) {
           const tag = match[0];
@@ -37,7 +43,7 @@ function splitSqlStatements(sqlText: string): string[] {
         }
       }
 
-      if (char === ';' && !inDollarQuote) {
+      if (char === ';' && !inDollarQuote && !inSingleQuote) {
         if (current.trim()) {
           statements.push(current.trim());
         }
