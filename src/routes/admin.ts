@@ -146,7 +146,7 @@ router.post(
       ) VALUES (
         ${body.title}, ${slug}, ${body.excerpt}, ${content}, ${body.cover_image_url ?? null},
         ${body.cover_public_id ?? null}, ${body.meta_title}, ${body.meta_description},
-        ${body.keywords}, ${body.status}, ${body.featured}, ${body.author || 'Nasuru Interios'},
+        ${body.keywords}, ${body.status}, ${body.featured}, ${body.author || 'Nasuru Interiors'},
         ${readingMinutes}, ${publishedAt}
       )
       RETURNING *
@@ -193,7 +193,7 @@ router.put(
         keywords = ${body.keywords},
         status = ${body.status},
         featured = ${body.featured},
-        author = ${body.author || 'Nasuru Interios'},
+        author = ${body.author || 'Nasuru Interiors'},
         reading_minutes = ${estimateReadingMinutes(content)},
         published_at = ${publishedAt},
         updated_at = NOW()

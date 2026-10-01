@@ -690,7 +690,7 @@ function relatedSection(self: Seed): string {
     .slice(0, 3)
     .map(({ o }) => `<li><a href="/articles/${slugify(o.title)}">${o.title}</a></li>`)
     .join('');
-  return `<h2>Related guides</h2><ul>${picks}</ul><p>Have questions? <a href="/about">Contact Nasuru Interios</a> for a free quote, or <a href="/articles">browse all our guides</a>.</p>`;
+  return `<h2>Related guides</h2><ul>${picks}</ul><p>Have questions? <a href="/about">Contact Nasuru Interiors</a> for a free quote, or <a href="/articles">browse all our guides</a>.</p>`;
 }
 
 function checkSeo(a: Seed) {
@@ -729,7 +729,7 @@ async function main() {
          status, featured, author, reading_minutes, published_at)
       VALUES
         (${slug}, ${a.title}, ${a.excerpt}, ${html}, ${a.metaTitle}, ${a.metaDescription},
-         ${keywords}, 'published', ${a.featured ?? false}, 'Nasuru Interios',
+         ${keywords}, 'published', ${a.featured ?? false}, 'Nasuru Interiors',
          ${estimateReadingMinutes(html)}, ${publishedAt})
       ON CONFLICT (slug) DO UPDATE SET
         title = EXCLUDED.title, excerpt = EXCLUDED.excerpt, content_html = EXCLUDED.content_html,
