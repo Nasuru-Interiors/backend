@@ -11,8 +11,8 @@ async function main() {
 <h3>What We Supply</h3><p>From a single room refresh to a full fit-out, <strong>{business_name}</strong> stocks everything you need to bring your interior design vision to life:</p>
 <ul>
   <li><strong>Curtains, Blinds &amp; Upholstery Fabrics:</strong> Sheers, blackout curtains, roller and Roman blinds, plus premium fabrics for sofas, cushions and headboards.</li>
-  <li><strong>Wallpapers &amp; Wall Panels:</strong> 3D wallpapers, textured and patterned designs, PVC and WPC wall panels, and decorative wall art for feature walls.</li>
-  <li><strong>Flooring &amp; Rugs:</strong> Vinyl and laminate flooring, carpets, rugs and floor finishes that balance style with durability.</li>
+  <li><strong>Wall Panels &amp; Wallpapers:</strong> WPC and PVC wall panels, fluted (ribbed) panels, acoustic panels, 3D and textured wallpapers for feature walls.</li><li><strong>Flexible Stone &amp; Tiles:</strong> lightweight flexible stone and ceramic-look cladding for walls, columns and fireplaces.</li>
+  <li><strong>Flooring &amp; Rugs:</strong> SPC, WPC and vinyl flooring, carpets and rugs that balance style with durability.</li><li><strong>Outdoor Decor:</strong> WPC decking, fence panels and cladding for patios, balconies and gardens.</li>
   <li><strong>Ceilings &amp; Lighting:</strong> PVC and POP ceiling accessories, chandeliers, pendant lights, wall lights and LED strip lighting.</li>
   <li><strong>Decor Accessories:</strong> Mirrors, vases, cushions, throws, artificial plants and finishing touches that complete a room.</li>
 </ul>
