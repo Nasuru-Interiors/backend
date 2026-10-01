@@ -638,10 +638,86 @@ const ARTICLES: Seed[] = [
 </ol>
 <p>Tell us where you live and which rooms give you trouble, and we will recommend finishes that last.</p>`,
   },
+  {
+    title: '9ft by 4ft PVC Marble Sheet (3mm): Size, Uses and Installation Guide',
+    excerpt:
+      'A full-size 9ft by 4ft PVC marble sheet covers a wall with very few joints. Learn the real size and thickness to expect, where to use it, what to avoid and how to install it.',
+    metaTitle: '9ft x 4ft PVC Marble Sheet (3mm): Uses, Size & Install',
+    metaDescription:
+      'Everything to know about the 9ft by 4ft 3mm PVC marble sheet: actual size, thickness, coverage, best rooms, limits, installation steps and care.',
+    keywords: ['marble sheet', 'PVC marble sheet', 'UV marble sheet', '9ft by 4ft marble sheet', '3mm marble sheet', 'marble sheet for TV wall'],
+    categories: ['Wall Panels', 'Decor Guides'],
+    daysAgo: 0,
+    featured: true,
+    html: `<p>The <strong>PVC marble sheet</strong>, also called a <strong>UV marble sheet</strong>, has become one of the most popular wall finishes for TV walls, bathrooms and shop interiors. The full-size <strong>9ft by 4ft</strong> version is especially loved because one sheet covers a large section of wall with very few joints. This guide explains what it is, what size and thickness to expect, where it works, where it does not, and how to fit it.</p>
+<h2>What is a PVC marble sheet?</h2>
+<p>It is a rigid, thin PVC board with a printed marble pattern and a glossy UV-cured coating on the surface. The coating gives the high-shine look of polished marble, helps the surface resist scratches and keeps the colour from fading. It is a decorative wall finish, not real stone and not a structural material.</p>
+<h2>Size, thickness and coverage: what to expect</h2>
+<ul>
+<li><strong>Width:</strong> about 1.22 m (4ft).</li>
+<li><strong>Height:</strong> a "9ft" sheet is usually sold at around 2.8 m (about 110 inches). Some suppliers cut slightly different lengths, such as 2.9 m, so the exact size varies.</li>
+<li><strong>Coverage:</strong> roughly 3.3 to 3.4 square metres per full sheet.</li>
+<li><strong>Thickness:</strong> sold as "3mm", but listings differ. Some sheets of this size are stated at 2.8mm, and others at 3mm with a small tolerance.</li>
+<li><strong>Weight:</strong> light enough for two people to carry. One manufacturer lists about 4.5 to 5.5 kg per square metre for 3mm sheets, which means roughly 15 to 19 kg for a full 9ft sheet.</li>
+</ul>
+<p><strong>Tip:</strong> do not assume. Ask the supplier for the exact length, width and thickness, and measure the sheets with a tape when they arrive, before you cut or glue anything.</p>
+<h2>Where a marble sheet works well</h2>
+<ul>
+<li><strong>TV and feature walls</strong> in living rooms</li>
+<li><strong>Bathrooms and shower walls</strong>, because the surface is non-porous and wipes clean</li>
+<li><strong>Kitchen splashbacks and sink areas</strong>, away from direct heat</li>
+<li><strong>Reception desks and lobby walls</strong> in offices and hotels</li>
+<li><strong>Salons, restaurants, shops and showrooms</strong> that want a luxury look on a sensible budget</li>
+<li><strong>Fireplace-style wall features</strong> that are decorative only</li>
+</ul>
+<h2>Where not to use it</h2>
+<ul>
+<li><strong>Outdoors and exterior walls.</strong> These sheets are made for interior use.</li>
+<li><strong>Floors.</strong> They are wall finishes, not flooring.</li>
+<li><strong>Right next to a cooker, stove or open flame.</strong> One manufacturer rates its sheet for heat up to about 93 degrees Celsius, which is fine for a kitchen wall but not for direct contact with hot cookware or flames.</li>
+<li><strong>Damp or crumbling walls.</strong> Fix the damp first.</li>
+</ul>
+<h2>Marble sheet vs real marble</h2>
+<p>Real marble is heavy, expensive and needs skilled fitting and sealing. A PVC marble sheet gives a similar polished look at a far lower weight, installs in hours instead of days and needs no grout. You give up the natural variation and the feel of real stone, so it suits people who want the look rather than the material.</p>
+<h2>What you need to install it</h2>
+<ul>
+<li>Construction or panel adhesive recommended by your supplier</li>
+<li>Tape measure, pencil, spirit level and a straight edge</li>
+<li>Utility knife or fine-tooth saw, depending on the sheet</li>
+<li>Notched trowel or adhesive gun</li>
+<li>Matching silicone sealant for seams and edges, and trims where needed</li>
+</ul>
+<h2>How to install a full-size sheet</h2>
+<ol>
+<li><strong>Prepare the wall.</strong> It must be clean, dry, flat and firm. Remove loose paint and dust and repair holes.</li>
+<li><strong>Measure and mark.</strong> Check the wall height against the sheet length and mark cut lines and socket positions.</li>
+<li><strong>Dry-fit first.</strong> Hold the sheet up to confirm the fit before applying adhesive.</li>
+<li><strong>Apply adhesive.</strong> Run a bead along the edges, about 1 cm in from the border, then add zigzag lines across the middle, spaced a few inches apart.</li>
+<li><strong>Position and press.</strong> With a helper, place the sheet from the bottom, align it to your level line and press firmly across the whole surface.</li>
+<li><strong>Finish the joints.</strong> Seal seams and edges with matching silicone or cover them with a trim. In wet areas, seal carefully.</li>
+<li><strong>Allow it to cure</strong> as the adhesive instructions say.</li>
+</ol>
+<p>A single wall typically takes only a few hours once the surface is ready.</p>
+<h2>Handling a 9ft sheet</h2>
+<p>A sheet this long is awkward in tight stairwells and small cars. Carry it on its long edge with two people, keep it flat during transport so it does not bend, and plan your route through doors before you collect it. Cut with the finished side up and support the sheet fully while cutting.</p>
+<h2>Care and cleaning</h2>
+<p>Wipe with a damp cloth and a little mild soap. Avoid abrasive pads, harsh solvents and scrubbing powders, which can dull the gloss. Wipe water splashes dry in bathrooms to keep the shine.</p>
+<h2>Quick buying checklist</h2>
+<ol>
+<li>Confirm the <strong>exact size and thickness</strong>.</li>
+<li>Ask if the sheet is <strong>interior-use only</strong> and what it is rated for.</li>
+<li>Check the <strong>surface for scratches</strong> and look at several sheets for colour and vein match.</li>
+<li>Buy <strong>one or two extra sheets</strong> if your wall needs cuts, because later batches may not match exactly.</li>
+<li>Ask about the right <strong>adhesive, sealant and trims</strong>.</li>
+</ol>
+<p>Send us your wall size and we will help you work out how many sheets you need and recommend a design.</p>`,
+  },
 ];
 
 /** "In Nigeria" notes: local context appended to every article (before the closing call-to-action). */
 const NG_NOTES: Record<string, string> = {
+  '9ft by 4ft PVC Marble Sheet (3mm): Size, Uses and Installation Guide':
+    '<p>Marble sheet sizes sold in Nigeria are not all the same. Common listings include about 1.2 m by 2.9 m and 1.2 m by 2.4 m, as well as the 9ft by 4ft size, so always confirm the length and thickness before you order and measure on delivery. The glossy surface wipes clean of harmattan dust and bathroom humidity, which makes it popular for TV walls, salons, shops and bathrooms. Keep it for interior walls, and do not fit it over a damp wall after the rains.</p>',
   'WPC Wall Panels: A Practical Buyer Guide':
     '<p>Panels that look like timber but are not attacked by termites are a real advantage in Nigeria, and the lighter weight helps on blockwork and on upper floors of duplexes and estates. Always confirm that a panel is rated for indoor use before putting it in a room, and keep outdoor-rated products for balconies and open areas exposed to rain and strong sun.</p>',
   'Fluted Wall Panels: How to Style, Light and Install Them':
