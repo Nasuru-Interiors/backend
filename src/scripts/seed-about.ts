@@ -19,7 +19,7 @@ async function main() {
 <h3>Why Choose {business_name}?</h3><p>Great interiors start with the right materials. Here is why homeowners, designers and developers rely on <strong>{business_name}</strong>:</p>
 <ul>
   <li><strong>Curated Quality:</strong> Every product is selected for finish, durability and lasting good looks.</li>
-  <li><strong>Wide Range of Styles:</strong> Modern, classic, minimalist or luxury &mdash; we stock designs for every taste and budget.</li>
+  <li><strong>Wide Range of Styles:</strong> Modern, classic, minimalist or luxury, we stock designs for every taste and budget.</li>
   <li><strong>Fair, Transparent Pricing:</strong> Competitive rates with honest quotes and trade pricing for bulk and project orders.</li>
   <li><strong>Helpful Advice:</strong> Not sure what suits your space? Our team helps you choose colours, textures and quantities.</li>
 </ul>
