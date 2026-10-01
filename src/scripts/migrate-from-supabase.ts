@@ -36,7 +36,7 @@ async function main() {
       const r = siteSettings[0];
       await sql`
         UPDATE public.site_settings SET
-          business_name = ${r.business_name ?? 'Nasuru Interios'},
+          business_name = ${r.business_name ?? 'Nasuru Interiors'},
           tagline = ${r.tagline ?? ''},
           logo_url = ${r.logo_url ?? null},
           logo_public_id = ${r.logo_public_id ?? null},
@@ -146,7 +146,7 @@ async function main() {
           ${r.id}, ${r.slug}, ${r.title}, ${r.excerpt ?? ''}, ${r.content_html ?? ''},
           ${r.cover_image_url ?? null}, ${r.cover_public_id ?? null}, ${r.meta_title ?? ''},
           ${r.meta_description ?? ''}, ${r.keywords ?? []}, ${r.status ?? 'draft'},
-          ${r.featured ?? false}, ${r.author ?? 'Nasuru Interios'},
+          ${r.featured ?? false}, ${r.author ?? 'Nasuru Interiors'},
           ${r.reading_minutes ?? 3}, ${r.published_at ?? null},
           ${r.created_at ?? new Date().toISOString()}, ${r.updated_at ?? new Date().toISOString()}
         )
