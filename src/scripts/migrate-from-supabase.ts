@@ -54,8 +54,8 @@ async function main() {
           lng = ${r.lng ?? null},
           facebook_url = ${r.facebook_url ?? ''},
           instagram_url = ${r.instagram_url ?? ''},
-          twitter_url = ${r.twitter_url ?? ''},
-          linkedin_url = ${r.linkedin_url ?? ''},
+          youtube_url = ${r.youtube_url ?? ''},
+          tiktok_url = ${r.tiktok_url ?? ''},
           default_meta_title = ${r.default_meta_title ?? ''},
           default_meta_description = ${r.default_meta_description ?? ''}
         WHERE id = 1
