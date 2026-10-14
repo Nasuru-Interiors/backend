@@ -126,3 +126,41 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+// =====================================================================
+// Webhook Schemas
+// =====================================================================
+export const webhookEventSchema = z.enum([
+  'article.created',
+  'article.updated',
+  'article.published',
+  'article.unpublished',
+  'article.deleted',
+  'article.*',
+  '*',
+]);
+
+export const webhookEndpointSchema = z.object({
+  name: z.string().min(1).max(100),
+  url: z.string().url(),
+  secret: z.string().min(16).max(128).optional(), // Optional on create, we generate if not provided
+  events: z.array(webhookEventSchema).min(1).default(['article.*']),
+  active: z.boolean().optional().default(true),
+  description: z.string().max(500).optional(),
+});
+
+export const webhookEndpointUpdateSchema = webhookEndpointSchema.partial();
+
+export const webhookDeliveryQuerySchema = z.object({
+  endpoint_id: z.string().uuid().optional(),
+  event_type: z.string().optional(),
+  status: z.enum(['pending', 'delivered', 'failed']).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+});
+
+export const webhookTestSchema = z.object({
+  endpoint_id: z.string().uuid(),
+  event_type: webhookEventSchema.optional().default('article.created'),
+  payload: z.record(z.unknown()).optional(),
+});
+

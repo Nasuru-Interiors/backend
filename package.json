@@ -17,7 +17,9 @@
     "migrate:supabase": "tsx src/scripts/migrate-from-supabase.ts",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
     "seed:about": "tsx src/scripts/seed-about.ts",
-    "seed:articles": "tsx src/scripts/seed-articles.ts"
+    "seed:articles": "tsx src/scripts/seed-articles.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -41,10 +43,13 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.7.4",
     "@types/sanitize-html": "^2.13.0",
+    "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
     "eslint": "^8.57.1",
+    "supertest": "^7.3.1",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.4"
   }
 }

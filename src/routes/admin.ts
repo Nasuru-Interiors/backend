@@ -5,6 +5,7 @@ import { requireAdmin, AuthedRequest } from '../middleware/auth';
 import { slugify, estimateReadingMinutes } from '../lib/slug';
 import { sanitizeRichText } from '../lib/sanitize';
 import { mediaLimiter } from '../middleware/rateLimit';
+import { triggerWebhooks } from '../lib/webhook';
 import {
   articleSchema,
   heroSchema,
@@ -154,6 +155,11 @@ router.post(
 
     const data = inserted[0];
     await setArticleCategories(String(data.id), body.category_ids);
+
+    // Trigger webhooks
+    const eventType = body.status === 'published' ? 'article.published' : 'article.created';
+    await triggerWebhooks(eventType as any, { ...data, category_ids: body.category_ids });
+
     res.status(201).json(data);
   }),
 );
@@ -173,6 +179,8 @@ router.put(
     const slug = slugify(body.slug || body.title);
     const content = sanitizeRichText(body.content_html);
     const becomingPublished = body.status === 'published';
+    const wasPublished = existing?.status === 'published';
+    const becomingUnpublished = !becomingPublished && wasPublished;
     const publishedAt =
       becomingPublished && !existing?.published_at
         ? new Date().toISOString()
@@ -208,6 +216,13 @@ router.put(
 
     const data = updated[0];
     await setArticleCategories(String(data.id), body.category_ids);
+
+    // Trigger webhooks
+    let eventType: 'article.updated' | 'article.published' | 'article.unpublished' = 'article.updated';
+    if (becomingPublished && !wasPublished) eventType = 'article.published';
+    else if (becomingUnpublished) eventType = 'article.unpublished';
+    await triggerWebhooks(eventType as any, { ...data, category_ids: body.category_ids });
+
     res.json(data);
   }),
 );
@@ -225,7 +240,12 @@ router.delete(
       await destroyAsset(String(existing.cover_public_id));
     }
 
+    const deletedArticle = { id: req.params.id };
     await sql`DELETE FROM public.articles WHERE id = ${req.params.id}`;
+
+    // Trigger webhook
+    await triggerWebhooks('article.deleted' as any, deletedArticle);
+
     res.json({ ok: true });
   }),
 );

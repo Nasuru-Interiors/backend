@@ -7,6 +7,7 @@ import { logger } from './lib/logger';
 import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
+import webhookRoutes from './routes/webhooks';
 import { errorHandler, notFound } from './middleware/error';
 import { requestLog, publicCache } from './middleware/requestLog';
 import { publicLimiter, adminLimiter } from './middleware/rateLimit';
@@ -64,6 +65,8 @@ export function createApp() {
   // is guarded by requireAdmin inside adminRoutes.
   app.use('/api/admin/auth', adminLimiter, authRoutes);
   app.use('/api/admin', adminLimiter, adminRoutes);
+  // Webhook management (admin only)
+  app.use('/api/admin/webhooks', adminLimiter, webhookRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
