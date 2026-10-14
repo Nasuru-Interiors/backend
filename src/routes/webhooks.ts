@@ -8,6 +8,7 @@ import {
   webhookTestSchema,
 } from '../validation/schemas';
 import { generateWebhookSecret } from '../lib/webhook';
+import crypto from 'crypto';
 
 const router = Router();
 router.use(requireAdmin);
@@ -23,7 +24,7 @@ router.get(
   wrap(async (_req, res) => {
     const rows = await sql`
       SELECT
-        id, name, url, events, active, description, created_by, created_at, updated_at
+        id, name, url, events, active, description, created_by, created_at, updated_at, inbound_url, is_inbound
       FROM public.webhook_endpoints
       ORDER BY created_at DESC
     `;
@@ -37,7 +38,7 @@ router.get(
   '/:id',
   wrap(async (req, res) => {
     const rows = await sql`
-      SELECT id, name, url, secret, events, active, description, created_by, created_at, updated_at
+      SELECT id, name, url, secret, events, active, description, created_by, created_at, updated_at, inbound_url, is_inbound
       FROM public.webhook_endpoints
       WHERE id = ${req.params.id}
       LIMIT 1
@@ -57,10 +58,17 @@ router.post(
     const body = webhookEndpointSchema.parse(req.body);
     const secret = body.secret || generateWebhookSecret();
 
+    // Generate inbound URL for inbound webhooks
+    let inboundUrl: string | null = null;
+    if (body.isInbound) {
+      const uniqueId = crypto.randomBytes(16).toString('hex');
+      inboundUrl = `/api/public/webhook/inbound/${uniqueId}`;
+    }
+
     const inserted = await sql`
-      INSERT INTO public.webhook_endpoints (name, url, secret, events, active, description, created_by)
-      VALUES (${body.name}, ${body.url}, ${secret}, ${body.events}, ${body.active}, ${body.description ?? null}, ${req.userId ?? null})
-      RETURNING id, name, url, secret, events, active, description, created_by, created_at, updated_at
+      INSERT INTO public.webhook_endpoints (name, url, secret, events, active, description, created_by, inbound_url, is_inbound)
+      VALUES (${body.name}, ${body.url}, ${secret}, ${body.events}, ${body.active}, ${body.description ?? null}, ${req.userId ?? null}, ${inboundUrl}, ${body.isInbound ?? false})
+      RETURNING id, name, url, secret, events, active, description, created_by, created_at, updated_at, inbound_url, is_inbound
     `;
 
     res.status(201).json(inserted[0]);
@@ -88,9 +96,10 @@ router.put(
         events = ${body.events !== undefined ? body.events : cur.events},
         active = ${body.active !== undefined ? body.active : cur.active},
         description = ${body.description !== undefined ? body.description : cur.description},
+        is_inbound = ${body.isInbound !== undefined ? body.isInbound : cur.is_inbound},
         updated_at = NOW()
       WHERE id = ${req.params.id}
-      RETURNING id, name, url, events, active, description, created_by, created_at, updated_at
+      RETURNING id, name, url, events, active, description, created_by, created_at, updated_at, inbound_url, is_inbound
     `;
 
     // If secret is being updated, handle separately

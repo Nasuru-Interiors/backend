@@ -23,27 +23,21 @@ const wrap =
  * Body: Article data matching articleSchema
  */
 
-// Get webhook secret for a source
-async function getWebhookSecret(source: string): Promise<string | null> {
-  // Check for dedicated inbound webhook config, fallback to env var
+// Get webhook endpoint by inbound URL path
+async function getWebhookByInboundUrl(path: string): Promise<{ secret: string; is_inbound: boolean } | null> {
   const rows = await sql`
-    SELECT secret FROM public.webhook_endpoints
-    WHERE url = ${source} OR name = ${source}
+    SELECT secret, is_inbound FROM public.webhook_endpoints
+    WHERE inbound_url = ${path} AND is_inbound = TRUE
     LIMIT 1
   `;
-  if (rows.length) return rows[0].secret as string;
-
-  // Fallback to environment variable for simple setups
-  // Format: WEBHOOK_SECRET_<SOURCE>=secret
-  const envKey = `WEBHOOK_SECRET_${source.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
-  return process.env[envKey] || null;
+  if (rows.length) return { secret: rows[0].secret as string, is_inbound: rows[0].is_inbound as boolean };
+  return null;
 }
 
-// Verify webhook signature
-async function verifyWebhookRequest(req: Request): Promise<{ valid: boolean; source?: string; error?: string }> {
+// Verify webhook signature using inbound URL path
+async function verifyWebhookRequest(req: Request): Promise<{ valid: boolean; error?: string }> {
   const signature = parseSignatureHeader(req.headers['x-webhook-signature'] as string);
   const timestamp = req.headers['x-webhook-timestamp'] as string;
-  const source = (req.headers['x-webhook-source'] as string) || 'default';
 
   if (!signature) {
     return { valid: false, error: 'Missing X-Webhook-Signature header' };
@@ -59,16 +53,23 @@ async function verifyWebhookRequest(req: Request): Promise<{ valid: boolean; sou
     return { valid: false, error: 'Invalid or expired timestamp' };
   }
 
-  const secret = await getWebhookSecret(source);
-  if (!secret) {
-    return { valid: false, error: `Unknown webhook source: ${source}` };
+  // Get the inbound URL path from the request
+  const inboundPath = req.path; // e.g., /api/public/webhook/inbound/abc123
+  const webhook = await getWebhookByInboundUrl(inboundPath);
+  
+  if (!webhook) {
+    return { valid: false, error: 'Invalid inbound webhook URL' };
+  }
+
+  if (!webhook.is_inbound) {
+    return { valid: false, error: 'Endpoint is not configured for inbound webhooks' };
   }
 
   // Include timestamp in signed payload to prevent replay
   const payload = `${timestamp}.${JSON.stringify(req.body)}`;
-  const valid = verifySignature(payload, signature, secret);
+  const valid = verifySignature(payload, signature, webhook.secret);
 
-  return { valid, source, error: valid ? undefined : 'Invalid signature' };
+  return { valid, error: valid ? undefined : 'Invalid signature' };
 }
 
 async function setArticleCategories(articleId: string, categoryIds: string[]) {
