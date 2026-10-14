@@ -141,11 +141,12 @@ export const webhookEventSchema = z.enum([
 
 export const webhookEndpointSchema = z.object({
   name: z.string().min(1).max(100),
-  url: z.string().url(),
+  url: z.string().min(1), // Can be URL or source identifier
   secret: z.string().min(16).max(128).optional(), // Optional on create, we generate if not provided
-  events: z.array(webhookEventSchema).min(1).default(['article.*']),
+  events: z.array(webhookEventSchema).optional().default(['article.*']),
   active: z.boolean().optional().default(true),
   description: z.string().max(500).optional(),
+  isInbound: z.boolean().optional().default(false), // Differentiate inbound vs outbound
 });
 
 export const webhookEndpointUpdateSchema = webhookEndpointSchema.partial();
