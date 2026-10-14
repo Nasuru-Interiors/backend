@@ -85,7 +85,7 @@ async function setArticleCategories(articleId: string, categoryIds: string[]) {
 
 // POST /api/public/webhook/article - Create or update article from external system
 router.post(
-  '/webhook/article',
+  '/article',
   wrap(async (req, res) => {
     const verification = await verifyWebhookRequest(req);
     if (!verification.valid) {
@@ -186,7 +186,7 @@ router.post(
 
 // GET /api/public/webhook/article/:slug - Get article by slug (for verification)
 router.get(
-  '/webhook/article/:slug',
+  '/article/:slug',
   wrap(async (req, res) => {
     const verification = await verifyWebhookRequest(req);
     if (!verification.valid) {
@@ -220,7 +220,7 @@ router.get(
 
 // DELETE /api/public/webhook/article/:slug - Delete article by slug
 router.delete(
-  '/webhook/article/:slug',
+  '/article/:slug',
   wrap(async (req, res) => {
     const verification = await verifyWebhookRequest(req);
     if (!verification.valid) {
