@@ -19,7 +19,7 @@ const wrap =
 
 // List all webhook endpoints
 router.get(
-  '/webhooks',
+  '/',
   wrap(async (_req, res) => {
     const rows = await sql`
       SELECT
@@ -34,7 +34,7 @@ router.get(
 
 // Get single webhook endpoint (with secret for admin)
 router.get(
-  '/webhooks/:id',
+  '/:id',
   wrap(async (req, res) => {
     const rows = await sql`
       SELECT id, name, url, secret, events, active, description, created_by, created_at, updated_at
@@ -52,7 +52,7 @@ router.get(
 
 // Create webhook endpoint
 router.post(
-  '/webhooks',
+  '/',
   wrap(async (req, res) => {
     const body = webhookEndpointSchema.parse(req.body);
     const secret = body.secret || generateWebhookSecret();
@@ -69,7 +69,7 @@ router.post(
 
 // Update webhook endpoint
 router.put(
-  '/webhooks/:id',
+  '/:id',
   wrap(async (req, res) => {
     const body = webhookEndpointUpdateSchema.parse(req.body);
 
@@ -104,7 +104,7 @@ router.put(
 
 // Regenerate webhook secret
 router.post(
-  '/webhooks/:id/regenerate-secret',
+  '/:id/regenerate-secret',
   wrap(async (req, res) => {
     const newSecret = generateWebhookSecret();
     await sql`UPDATE public.webhook_endpoints SET secret = ${newSecret}, updated_at = NOW() WHERE id = ${req.params.id}`;
@@ -114,7 +114,7 @@ router.post(
 
 // Delete webhook endpoint
 router.delete(
-  '/webhooks/:id',
+  '/:id',
   wrap(async (req, res) => {
     const result = await sql`DELETE FROM public.webhook_endpoints WHERE id = ${req.params.id}`;
     if (result.length === 0) {
@@ -127,7 +127,7 @@ router.delete(
 
 // List webhook deliveries
 router.get(
-  '/webhooks/:id/deliveries',
+  '/:id/deliveries',
   wrap(async (req, res) => {
     const query = webhookDeliveryQuerySchema.parse(req.query);
 
@@ -175,7 +175,7 @@ router.get(
 
 // Get delivery stats for an endpoint
 router.get(
-  '/webhooks/:id/stats',
+  '/:id/stats',
   wrap(async (req, res) => {
     const stats = await sql`
       SELECT
@@ -193,7 +193,7 @@ router.get(
 
 // Test webhook endpoint
 router.post(
-  '/webhooks/test',
+  '/test',
   wrap(async (req, res) => {
     const body = webhookTestSchema.parse(req.body);
 
@@ -261,7 +261,7 @@ router.post(
 
 // Retry failed delivery
 router.post(
-  '/webhooks/deliveries/:deliveryId/retry',
+  '/deliveries/:deliveryId/retry',
   wrap(async (req, res) => {
     const deliveryRows = await sql`
       SELECT d.*, e.url, e.secret

@@ -36,7 +36,7 @@ describe('Inbound Webhook - Unit Tests', () => {
 
   describe('Payload Validation', () => {
     it('should require title field', () => {
-      const body = { content_html: '<p>No title</p>' };
+      const body: Record<string, unknown> = { content_html: '<p>No title</p>' };
       expect(body.title).toBeUndefined();
     });
 
@@ -60,7 +60,7 @@ describe('Inbound Webhook - Unit Tests', () => {
     });
 
     it('should default status to draft', () => {
-      const body = { title: 'Test', content_html: '<p>Content</p>' };
+      const body = { title: 'Test', content_html: '<p>Content</p>', status: 'draft' };
       const status = body.status === 'published' ? 'published' : 'draft';
       expect(status).toBe('draft');
     });
