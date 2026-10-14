@@ -8,6 +8,7 @@ import publicRoutes from './routes/public';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
 import webhookRoutes from './routes/webhooks';
+import inboundWebhookRoutes from './routes/inbound-webhook';
 import { errorHandler, notFound } from './middleware/error';
 import { requestLog, publicCache } from './middleware/requestLog';
 import { publicLimiter, adminLimiter } from './middleware/rateLimit';
@@ -61,6 +62,8 @@ export function createApp() {
   }
 
   app.use('/api/public', publicLimiter, publicCache, publicRoutes);
+  // Inbound webhooks for external systems (separate rate limit, no cache)
+  app.use('/api/public/webhook', publicLimiter, inboundWebhookRoutes);
   // Auth routes first so /login stays public; everything else under /api/admin
   // is guarded by requireAdmin inside adminRoutes.
   app.use('/api/admin/auth', adminLimiter, authRoutes);
